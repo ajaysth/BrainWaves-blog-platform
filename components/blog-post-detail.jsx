@@ -200,6 +200,15 @@ export default function BlogPostDetail({ post }) {
             </div>
 
             {/* Featured Image */}
+            {post.featuredImage && (
+              <div className="mb-12 flex justify-center">
+                <img
+                  src={post.featuredImage}
+                  alt={post.title}
+                  className="max-w-2xl h-auto rounded-xl object-cover"
+                />
+              </div>
+            )}
             <div className="mb-12 space-y-4">
               {post.images?.map((image, index) => (
                 <img
@@ -212,7 +221,7 @@ export default function BlogPostDetail({ post }) {
             </div>
 
             {/* Article Content */}
-            <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
+            <article className="prose prose-lg" dangerouslySetInnerHTML={{ __html: post.content }} />
 
             {/* Article Footer */}
             <div className="mt-16 pt-8 border-t border-border">
