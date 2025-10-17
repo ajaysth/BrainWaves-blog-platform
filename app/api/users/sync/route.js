@@ -1,13 +1,14 @@
-
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import db from "@/lib/prisma";
+import { db } from "@/lib/prisma";
 
 export async function POST(req) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error("Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local");
+    throw new Error(
+      "Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local"
+    );
   }
 
   const headerPayload = await headers();
@@ -48,7 +49,9 @@ export async function POST(req) {
     const { id, email_addresses, image_url, first_name, last_name } = evt.data;
 
     if (!email_addresses || email_addresses.length === 0) {
-      console.error("User created webhook received, but no email address found.");
+      console.error(
+        "User created webhook received, but no email address found."
+      );
       return new Response("No email address found", { status: 400 });
     }
 
@@ -109,7 +112,7 @@ export async function POST(req) {
     } catch (error) {
       console.error("Error deleting user:", error);
       // If the user is not found, it's not a critical error.
-      if (error.code === 'P2025') {
+      if (error.code === "P2025") {
         return new Response("User not found", { status: 200 });
       }
       return new Response("Error occured", {
