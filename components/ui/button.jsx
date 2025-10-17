@@ -45,11 +45,20 @@ function Button({
 }) {
   const Comp = asChild ? Slot : "button"
 
+  // Filter out Clerk-specific props when asChild is true
+  const filteredProps = asChild
+    ? Object.fromEntries(
+        Object.entries(props).filter(
+          ([key]) => !['afterSignInUrl', 'mode'].includes(key)
+        )
+      )
+    : props;
+
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props} />
+      {...filteredProps} />
   );
 }
 

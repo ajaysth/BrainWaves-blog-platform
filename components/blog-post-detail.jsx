@@ -20,6 +20,9 @@ import {
   CopyIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+// import ReactMarkdown from "react-markdown";
+// import remarkGfm from "remark-gfm";
 
 export default function BlogPostDetail({ post }) {
   const [readingProgress, setReadingProgress] = useState(0);
@@ -97,10 +100,10 @@ export default function BlogPostDetail({ post }) {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="sm" asChild>
-              <a href="/blog" className="flex items-center gap-2">
+              <Link href="/blog" className="flex items-center gap-2">
                 <ArrowLeftIcon className="h-4 w-4" />
                 Back to Blog
-              </a>
+              </Link>
             </Button>
             <div className="flex items-center gap-2">
               <Button
@@ -122,63 +125,40 @@ export default function BlogPostDetail({ post }) {
 
       <div className="container mx-auto px-4 py-12 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Table of Contents - Desktop */}
+          {/* Share Section - Left Sidebar */}
           <aside className="hidden lg:block lg:col-span-3">
             <div className="sticky top-24">
               <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
-                Table of Contents
+                Share Article
               </h3>
-              <nav className="space-y-2">
-                {post.tableOfContents.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => scrollToSection(item.id)}
-                    className={cn(
-                      "block text-sm text-left w-full py-1.5 px-3 rounded-md transition-colors hover:bg-accent",
-                      activeSection === item.id
-                        ? "bg-accent text-accent-foreground font-medium"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    {item.title}
-                  </button>
-                ))}
-              </nav>
-
-              {/* Share Section */}
-              <div className="mt-8 pt-8 border-t border-border">
-                <h3 className="text-sm font-semibold mb-4 text-muted-foreground uppercase tracking-wider">
-                  Share Article
-                </h3>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-transparent"
-                    onClick={() => handleShare("twitter")}
-                  >
-                    <TwitterIcon className="h-4 w-4 mr-2" />
-                    Twitter
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-transparent"
-                    onClick={() => handleShare("linkedin")}
-                  >
-                    <LinkedinIcon className="h-4 w-4 mr-2" />
-                    LinkedIn
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start bg-transparent"
-                    onClick={() => handleShare("facebook")}
-                  >
-                    <FacebookIcon className="h-4 w-4 mr-2" />
-                    Facebook
-                  </Button>
-                </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="justify-start bg-transparent"
+                  onClick={() => handleShare("twitter")}
+                >
+                  <TwitterIcon className="h-4 w-4 mr-2" />
+                  Twitter
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="justify-start bg-transparent"
+                  onClick={() => handleShare("linkedin")}
+                >
+                  <LinkedinIcon className="h-4 w-4 mr-2" />
+                  LinkedIn
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="justify-start bg-transparent"
+                  onClick={() => handleShare("facebook")}
+                >
+                  <FacebookIcon className="h-4 w-4 mr-2" />
+                  Facebook
+                </Button>
               </div>
             </div>
           </aside>
@@ -189,8 +169,8 @@ export default function BlogPostDetail({ post }) {
             <div className="mb-12">
               <div className="flex flex-wrap gap-2 mb-6">
                 {post.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
+                  <Badge key={tag.id} variant="secondary">
+                    {tag.name}
                   </Badge>
                 ))}
               </div>
@@ -206,7 +186,11 @@ export default function BlogPostDetail({ post }) {
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4" />
-                  {post.date}
+                  {new Date(post.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   <ClockIcon className="h-4 w-4" />
@@ -216,71 +200,26 @@ export default function BlogPostDetail({ post }) {
             </div>
 
             {/* Featured Image */}
-            {post.image && (
-              <div className="mb-12 rounded-xl overflow-hidden">
+            <div className="mb-12 space-y-4">
+              {post.images?.map((image, index) => (
                 <img
-                  src={post.image || "/placeholder.svg"}
+                  key={index}
+                  src={image.url || "/placeholder.svg"}
                   alt={post.title}
-                  className="w-full h-auto"
+                  className="w-full h-auto rounded-xl"
                 />
-              </div>
-            )}
+              ))}
+            </div>
 
             {/* Article Content */}
-            <article className="prose prose-lg max-w-none">
-              {post.content.map((section, index) => (
-                <div key={index}>
-                  {section.type === "heading" && (
-                    <h2 id={section.id} className="scroll-mt-24">
-                      {section.text}
-                    </h2>
-                  )}
-                  {section.type === "paragraph" && <p>{section.text}</p>}
-                  {section.type === "code" && (
-                    <div className="relative group">
-                      <pre className="relative">
-                        <code>{section.code}</code>
-                      </pre>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => copyCode(section.code, index)}
-                      >
-                        {copiedCode === index ? (
-                          <>
-                            <CheckIcon className="h-4 w-4 mr-1" />
-                            Copied
-                          </>
-                        ) : (
-                          <>
-                            <CopyIcon className="h-4 w-4 mr-1" />
-                            Copy
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                  {section.type === "quote" && (
-                    <blockquote>{section.text}</blockquote>
-                  )}
-                  {section.type === "list" && (
-                    <ul>
-                      {section.items.map((item, i) => (
-                        <li key={i}>{item}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))}
-            </article>
+            <article className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
 
             {/* Article Footer */}
             <div className="mt-16 pt-8 border-t border-border">
               <div className="flex flex-wrap gap-2">
                 {post.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    #{tag}
+                  <Badge key={tag.id} variant="outline">
+                    #{tag.name}
                   </Badge>
                 ))}
               </div>
@@ -292,7 +231,7 @@ export default function BlogPostDetail({ post }) {
                 <div className="flex items-start gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage
-                      src={post.author.avatar || "/placeholder.svg"}
+                      src={post.author.imageUrl || "/placeholder.svg"}
                       alt={post.author.name}
                     />
                     <AvatarFallback>
@@ -304,9 +243,9 @@ export default function BlogPostDetail({ post }) {
                       {post.author.name}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                      {post.author.role}
+                      {post.author.profile?.bio}
                     </p>
-                    <p className="text-sm leading-relaxed">{post.author.bio}</p>
+                    <p className="text-sm leading-relaxed">{post.author.profile?.website}</p>
                   </div>
                 </div>
               </CardContent>
@@ -315,27 +254,31 @@ export default function BlogPostDetail({ post }) {
             {/* Navigation */}
             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4">
               {post.previousPost && (
-                <Card className="hover:bg-accent transition-colors cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <ArrowLeftIcon className="h-4 w-4" />
-                      Previous Post
-                    </div>
-                    <h4 className="font-semibold">{post.previousPost.title}</h4>
-                  </CardContent>
+                <Card className="hover:bg-accent transition-colors cursor-pointer" asChild>
+                  <Link href={`/blog/${post.previousPost.slug}`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                        <ArrowLeftIcon className="h-4 w-4" />
+                        Previous Post
+                      </div>
+                      <h4 className="font-semibold">{post.previousPost.title}</h4>
+                    </CardContent>
+                  </Link>
                 </Card>
               )}
               {post.nextPost && (
-                <Card className="hover:bg-accent transition-colors cursor-pointer md:col-start-2">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground mb-2">
-                      Next Post
-                      <ArrowRightIcon className="h-4 w-4" />
-                    </div>
-                    <h4 className="font-semibold text-right">
-                      {post.nextPost.title}
-                    </h4>
-                  </CardContent>
+                <Card className="hover:bg-accent transition-colors cursor-pointer md:col-start-2" asChild>
+                  <Link href={`/blog/${post.nextPost.slug}`}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground mb-2">
+                        Next Post
+                        <ArrowRightIcon className="h-4 w-4" />
+                      </div>
+                      <h4 className="font-semibold text-right">
+                        {post.nextPost.title}
+                      </h4>
+                    </CardContent>
+                  </Link>
                 </Card>
               )}
             </div>
@@ -349,26 +292,27 @@ export default function BlogPostDetail({ post }) {
               </h3>
               <div className="space-y-4">
                 {post.relatedPosts.map((relatedPost) => (
-                  <Card
-                    key={relatedPost.id}
-                    className="hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    <CardContent className="p-4">
-                      {relatedPost.image && (
-                        <img
-                          src={relatedPost.image || "/placeholder.svg"}
-                          alt={relatedPost.title}
-                          className="w-full h-32 object-cover rounded-md mb-3"
-                        />
-                      )}
-                      <h4 className="font-semibold text-sm mb-2 line-clamp-2">
-                        {relatedPost.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {relatedPost.readTime} min read
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`} className="block">
+                    <Card
+                      className="hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <CardContent className="p-4">
+                        {relatedPost.images && relatedPost.images.length > 0 && (
+                          <img
+                            src={relatedPost.images[0].url || "/placeholder.svg"}
+                            alt={relatedPost.title}
+                            className="w-full h-32 object-cover rounded-md mb-3"
+                          />
+                        )}
+                        <h4 className="font-semibold text-sm mb-2 line-clamp-2">
+                          {relatedPost.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {relatedPost.readTime} min read
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -378,3 +322,4 @@ export default function BlogPostDetail({ post }) {
     </div>
   );
 }
+

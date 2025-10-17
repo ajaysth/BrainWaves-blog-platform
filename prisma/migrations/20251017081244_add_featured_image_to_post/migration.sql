@@ -1,0 +1,1 @@
+ALTER TABLE "Post" ADD COLUMN "featuredImage" TEXT DEFAULT '/cardimg/1.jpg';

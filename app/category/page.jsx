@@ -1,31 +1,26 @@
-"use client";
-
-import { CategoryGrid } from "@/components/category-grid";
 import { CategoryHero } from "@/components/category-hero";
-import { CategoryFilters } from "@/components/category-filters";
-import { useState } from "react";
+import db from "@/lib/prisma";
+import CategoryClientPage from "@/components/category-client-page";
 
-export default function CategoriesPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("name");
-  const [viewMode, setViewMode] = useState("grid");
+async function getCategories() {
+  const categories = await db.category.findMany({
+    include: {
+      _count: {
+        select: { posts: true },
+      },
+    },
+  });
+  return categories;
+}
+
+export default async function CategoriesPage() {
+  const categories = await getCategories();
 
   return (
     <main className="min-h-screen">
       <CategoryHero />
-      <CategoryFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-      <CategoryGrid
-        searchQuery={searchQuery}
-        sortBy={sortBy}
-        viewMode={viewMode}
-      />
+      <CategoryClientPage categories={categories} />
     </main>
   );
 }
+

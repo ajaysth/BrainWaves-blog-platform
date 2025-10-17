@@ -20,8 +20,15 @@ export function BlogCard({
   image,
   trending,
   slug,
+  tags,
   index = 0,
 }) {
+  const formattedDate = new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -34,7 +41,7 @@ export function BlogCard({
           <CardHeader className="p-0 gap-0">
             <div className="relative overflow-hidden aspect-video">
               <motion.img
-                src={image}
+                src={image || "/placeholder.jpg"} // Fallback image
                 alt={title}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
               />
@@ -55,7 +62,7 @@ export function BlogCard({
                   variant="secondary"
                   className="bg-background/90 backdrop-blur-sm"
                 >
-                  {category}
+                  {category.name}
                 </Badge>
               </div>
             </div>
@@ -69,13 +76,28 @@ export function BlogCard({
             <p className="text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
               {excerpt}
             </p>
+
+            {/* Tags */}
+            {tags && tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="outline"
+                    className="text-xs text-muted-foreground"
+                  >
+                    #{tag.name}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </CardContent>
 
           <CardFooter className="pt-0 flex justify-between items-center">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                <span>{date}</span>
+                <span>{formattedDate}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />

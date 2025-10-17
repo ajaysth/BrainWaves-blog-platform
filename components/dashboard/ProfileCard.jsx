@@ -1,16 +1,29 @@
+"use client";
+
+import { useUser } from "@clerk/nextjs";
 import { Mail, MapPin, Calendar, LinkIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export function ProfileCard() {
+  const { user } = useUser();
+
+  if (!user) {
+    return null; // or a loading skeleton
+  }
+
   return (
     <Card className="p-6 bg-card border-border">
       <div className="flex flex-col items-center text-center">
-        <div className="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-primary text-3xl font-bold">
-          JD
+        <div className="mb-4">
+          <img
+            src={user.imageUrl}
+            alt={user.fullName || "User profile picture"}
+            className="h-24 w-24 rounded-full"
+          />
         </div>
 
-        <h2 className="text-2xl font-bold text-foreground">John Doe</h2>
+        <h2 className="text-2xl font-bold text-foreground">{user.fullName}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Full Stack Developer & Writer
         </p>
@@ -33,7 +46,7 @@ export function ProfileCard() {
         <div className="mt-6 w-full space-y-3 text-left">
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <Mail className="h-4 w-4" />
-            <span>john.doe@example.com</span>
+            <span>{user.primaryEmailAddress.emailAddress}</span>
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />

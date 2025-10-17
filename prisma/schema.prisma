@@ -15,18 +15,68 @@ model User {
   email       String
   imageUrl    String?
   createdAt   DateTime @default(now())
-  sessions    Session[]
+  posts       Post[]
+  profile     Profile?
 }
-model Session {
-  id             String   @id @default(cuid())
-  userId         String
-  clerkSessionId String   @unique
-  ipAddress      String?
-  userAgent      String?
-  lastActive     DateTime @default(now())
-  expiresAt      DateTime?
-  createdAt      DateTime @default(now())
 
-  // 👇 Relation back to User
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+model Profile {
+  id       String  @id @default(cuid())
+  bio      String?
+  website  String?
+  twitter  String?
+  linkedin String?
+  userId   String  @unique
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+  icon        String?
+  posts       Post[]
+}
+
+model Post {
+  id         String     @id @default(cuid())
+  slug       String     @unique
+  title      String
+  excerpt    String?
+  content    String
+  date       DateTime
+  readTime   String?
+  trending   Boolean    @default(false)
+  status     PostStatus @default(DRAFT)
+  views      Int        @default(0)
+  likes      Int        @default(0)
+  featuredImage String? @default("/cardimg/1.jpg")
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  authorId   String
+  categoryId String
+  images     Image[]
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tags       Tag[]      @relation("PostToTag")
+}
+
+model Image {
+  id         String  @id @default(cuid())
+  url        String
+  postId     String
+  isFeatured Boolean @default(false)
+  post       Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  slug  String @unique
+  posts Post[] @relation("PostToTag")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
 }

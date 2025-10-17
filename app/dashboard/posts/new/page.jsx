@@ -1,47 +1,137 @@
-"use client";
+'use client';
 
-import { useState, useRef } from "react";
-import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Save, Eye, ImageIcon, X } from "lucide-react";
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { DashboardNavbar } from '@/components/dashboard/DashboardNavbar';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Save, Eye, ImageIcon, X, Loader2, Star } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 export default function NewPostPage() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [excerpt, setExcerpt] = useState('');
   const [images, setImages] = useState([]);
+  const [categoryId, setCategoryId] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState('');
+  const [status, setStatus] = useState('DRAFT');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+  const router = useRouter();
 
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setImages((prev) => [
-            ...prev,
-            {
-              id: Date.now() + Math.random(),
-              url: e.target.result,
-              name: file.name,
-            },
-          ]);
-        };
-        reader.readAsDataURL(file);
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories');
+        if (!res.ok) throw new Error('Failed to fetch categories');
+        const data = await res.json();
+        setCategories(data);
+      } catch (error) {
+        setError(error.message);
+        toast.error(error.message);
       }
-    });
+    };
+    fetchCategories();
+  }, []);
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    const uploadedImages = [];
+
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!res.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+
+          const data = await res.json();
+          uploadedImages.push({
+            id: Date.now() + Math.random(),
+            url: data.url,
+            name: file.name,
+            isFeatured: false, // New field
+          });
+        } catch (error) {
+          toast.error(error.message);
+        }
+      }
+    }
+
+    setImages((prev) => [...prev, ...uploadedImages]);
   };
 
   const removeImage = (id) => {
     setImages((prev) => prev.filter((img) => img.id !== id));
   };
 
+  const toggleFeatured = (id) => {
+    setImages((prev) =>
+      prev.map((img) =>
+        img.id === id ? { ...img, isFeatured: !img.isFeatured } : { ...img, isFeatured: false }
+      )
+    );
+  };
+
   const insertImageToContent = (imageUrl, imageName) => {
     const imageMarkdown = `\n![${imageName}](${imageUrl})\n`;
     setContent((prev) => prev + imageMarkdown);
+  };
+
+  const handleSubmit = async (postStatus) => {
+    setLoading(true);
+    setError(null);
+    setStatus(postStatus);
+
+    try {
+      const res = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          content,
+          excerpt,
+          categoryId,
+          status: postStatus,
+          images: images.map(img => ({ url: img.url, isFeatured: img.isFeatured })),
+          tags: tags.split(',').map(tag => tag.trim()),
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to create post');
+      }
+
+      toast.success(`Post ${postStatus.toLowerCase()}ed successfully!`);
+      router.push('/dashboard/posts');
+    } catch (error) {
+      setError(error.message);
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,6 +149,50 @@ export default function NewPostPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="text-2xl font-bold h-auto py-3"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select
+                onValueChange={setCategoryId}
+                defaultValue={categoryId}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags</Label>
+              <Input
+                id="tags"
+                placeholder="Enter comma-separated tags..."
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="excerpt">Excerpt</Label>
+              <Textarea
+                id="excerpt"
+                placeholder="Enter a short summary of your post..."
+                value={excerpt}
+                onChange={(e) => setExcerpt(e.target.value)}
+                rows={4}
+                disabled={loading}
               />
             </div>
 
@@ -69,6 +203,7 @@ export default function NewPostPage() {
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
                 >
                   <ImageIcon className="mr-2 h-4 w-4" />
                   Upload Images
@@ -80,9 +215,10 @@ export default function NewPostPage() {
                   multiple
                   className="hidden"
                   onChange={handleImageUpload}
+                  disabled={loading}
                 />
                 <span className="text-sm text-muted-foreground">
-                  {images.length} image{images.length !== 1 ? "s" : ""} uploaded
+                  {images.length} image{images.length !== 1 ? 's' : ''} uploaded
                 </span>
               </div>
 
@@ -91,10 +227,10 @@ export default function NewPostPage() {
                   {images.map((image) => (
                     <div
                       key={image.id}
-                      className="relative group rounded-lg overflow-hidden border border-border bg-muted"
+                      className={`relative group rounded-lg overflow-hidden border-2 ${image.isFeatured ? 'border-primary' : 'border-border'} bg-muted`}
                     >
                       <img
-                        src={image.url || "/placeholder.svg"}
+                        src={image.url || '/placeholder.svg'}
                         alt={image.name}
                         className="w-full h-32 object-cover"
                       />
@@ -105,6 +241,7 @@ export default function NewPostPage() {
                           onClick={() =>
                             insertImageToContent(image.url, image.name)
                           }
+                          disabled={loading}
                         >
                           Insert
                         </Button>
@@ -112,8 +249,17 @@ export default function NewPostPage() {
                           size="sm"
                           variant="destructive"
                           onClick={() => removeImage(image.id)}
+                          disabled={loading}
                         >
                           <X className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={image.isFeatured ? 'primary' : 'secondary'}
+                          onClick={() => toggleFeatured(image.id)}
+                          disabled={loading}
+                        >
+                          <Star className="h-4 w-4" />
                         </Button>
                       </div>
                       <div className="p-2 bg-background/95">
@@ -136,6 +282,7 @@ export default function NewPostPage() {
                 onChange={(e) => setContent(e.target.value)}
                 rows={20}
                 className="font-mono"
+                disabled={loading}
               />
               <p className="text-xs text-muted-foreground">
                 Tip: Images will be inserted as Markdown. You can also drag and
@@ -144,15 +291,30 @@ export default function NewPostPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button>
-                <Save className="mr-2 h-4 w-4" />
+              <Button
+                onClick={() => handleSubmit('DRAFT')}
+                disabled={loading || !title || !content || !categoryId}
+              >
+                {loading && status === 'DRAFT' ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
                 Save Draft
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" disabled={loading}>
                 <Eye className="mr-2 h-4 w-4" />
                 Preview
               </Button>
-              <Button variant="default" className="ml-auto">
+              <Button
+                variant="default"
+                className="ml-auto"
+                onClick={() => handleSubmit('PUBLISHED')}
+                disabled={loading || !title || !content || !categoryId}
+              >
+                {loading && status === 'PUBLISHED' ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
                 Publish
               </Button>
             </div>

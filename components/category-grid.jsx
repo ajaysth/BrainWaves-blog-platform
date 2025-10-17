@@ -5,77 +5,7 @@ import { CategoryListItem } from "./category-list-item";
 import { useMemo, useState, useEffect } from "react";
 import { Sparkles, Search } from "lucide-react";
 
-// Sample categories - replace with your actual data from Supabase/Prisma
-const categories = [
-  {
-    id: "1",
-    name: "Technology",
-    slug: "technology",
-    description: "Latest trends in tech, software development, and innovation.",
-    postCount: 42,
-    color: "from-blue-500/10 to-cyan-500/10",
-    icon: "💻",
-    gradient: "from-blue-500 to-cyan-500",
-    updatedAt: new Date("2024-01-15"),
-  },
-  {
-    id: "2",
-    name: "Design",
-    slug: "design",
-    description: "UI/UX design, visual arts, and creative inspiration.",
-    postCount: 38,
-    color: "from-purple-500/10 to-pink-500/10",
-    icon: "🎨",
-    gradient: "from-purple-500 to-pink-500",
-    updatedAt: new Date("2024-01-20"),
-  },
-  {
-    id: "3",
-    name: "Business",
-    slug: "business",
-    description: "Entrepreneurship, startups, and business strategies.",
-    postCount: 29,
-    color: "from-emerald-500/10 to-teal-500/10",
-    icon: "📊",
-    gradient: "from-emerald-500 to-teal-500",
-    updatedAt: new Date("2024-01-10"),
-  },
-  {
-    id: "4",
-    name: "Lifestyle",
-    slug: "lifestyle",
-    description: "Health, wellness, travel, and personal development.",
-    postCount: 51,
-    color: "from-orange-500/10 to-amber-500/10",
-    icon: "🌟",
-    gradient: "from-orange-500 to-amber-500",
-    updatedAt: new Date("2024-01-18"),
-  },
-  {
-    id: "5",
-    name: "Science",
-    slug: "science",
-    description: "Scientific discoveries, research, and exploration.",
-    postCount: 24,
-    color: "from-indigo-500/10 to-blue-500/10",
-    icon: "🔬",
-    gradient: "from-indigo-500 to-blue-500",
-    updatedAt: new Date("2024-01-12"),
-  },
-  {
-    id: "6",
-    name: "Culture",
-    slug: "culture",
-    description: "Arts, music, literature, and cultural commentary.",
-    postCount: 33,
-    color: "from-rose-500/10 to-red-500/10",
-    icon: "🎭",
-    gradient: "from-rose-500 to-red-500",
-    updatedAt: new Date("2024-01-22"),
-  },
-];
-
-export function CategoryGrid({ searchQuery, sortBy, viewMode }) {
+export function CategoryGrid({ categories, searchQuery, sortBy, viewMode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -86,7 +16,7 @@ export function CategoryGrid({ searchQuery, sortBy, viewMode }) {
     const filtered = categories.filter(
       (category) =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        category.description.toLowerCase().includes(searchQuery.toLowerCase())
+        (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     filtered.sort((a, b) => {
@@ -94,18 +24,18 @@ export function CategoryGrid({ searchQuery, sortBy, viewMode }) {
         case "name":
           return a.name.localeCompare(b.name);
         case "posts":
-          return b.postCount - a.postCount;
+          return b._count.posts - a._count.posts;
         case "recent":
-          return b.updatedAt.getTime() - a.updatedAt.getTime();
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [searchQuery, sortBy]);
+  }, [categories, searchQuery, sortBy]);
 
-  const totalPosts = categories.reduce((sum, cat) => sum + cat.postCount, 0);
+  const totalPosts = categories.reduce((sum, cat) => sum + (cat._count.posts || 0), 0);
 
   return (
     <section className="px-6 py-16 md:py-24">
@@ -138,7 +68,7 @@ export function CategoryGrid({ searchQuery, sortBy, viewMode }) {
                 <div className="text-sm font-medium">
                   {
                     categories.reduce((max, cat) =>
-                      cat.postCount > max.postCount ? cat : max
+                      (cat._count.posts || 0) > (max._count.posts || 0) ? cat : max
                     ).name
                   }
                 </div>

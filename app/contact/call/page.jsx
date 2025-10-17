@@ -3,20 +3,20 @@ import { ArrowLeft, Phone, Clock, Globe, Headphones } from "lucide-react";
 
 const phoneNumbers = [
   {
-    region: "United States",
-    number: "+1 (555) 123-4567",
-    hours: "Mon-Fri: 9:00 AM - 6:00 PM EST",
+    region: "Kathmandu, Nepal",
+    number: "+977 1-1234567",
+    hours: "Mon-Fri: 9:00 AM - 6:00 PM NST",
     icon: Globe,
   },
   {
-    region: "United Kingdom",
-    number: "+44 20 1234 5678",
-    hours: "Mon-Fri: 9:00 AM - 5:00 PM GMT",
+    region: "Bhaktapur, Nepal",
+    number: "+977 56-123456",
+    hours: "Mon-Fri: 9:00 AM - 5:00 PM NST",
     icon: Globe,
   },
   {
     region: "Support Hotline",
-    number: "+1 (555) 987-6543",
+    number: "+977 1-9876543",
     hours: "24/7 Emergency Support",
     icon: Headphones,
   },

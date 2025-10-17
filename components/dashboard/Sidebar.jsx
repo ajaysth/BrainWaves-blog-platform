@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 
 const navigation = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -27,11 +28,12 @@ const navigation = [
 export function Sidebar() {
   const pathname = usePathname();
   const [isHovered, setIsHovered] = useState(false);
+  const { user } = useUser();
 
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-20 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300",
+        "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border bg-sidebar transition-all duration-300",
         isHovered ? "w-64" : "w-16"
       )}
       onMouseEnter={() => setIsHovered(true)}
@@ -77,21 +79,25 @@ export function Sidebar() {
         </nav>
 
         <div className="border-t border-sidebar-border p-3 bg-gradient-to-r from-primary/5 to-accent/5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-md">
-              <User className="h-5 w-5" />
+          {user && (
+            <div className="flex items-center gap-3">
+              <img
+                src={user.imageUrl}
+                alt={user.fullName || "User profile picture"}
+                className="h-10 w-10 rounded-full"
+              />
+              {isHovered && (
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-medium text-sidebar-foreground">
+                    {user.fullName}
+                  </p>
+                  <p className="truncate text-xs text-sidebar-foreground/60">
+                    {user.primaryEmailAddress.emailAddress}
+                  </p>
+                </div>
+              )}
             </div>
-            {isHovered && (
-              <div className="flex-1 overflow-hidden">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">
-                  John Doe
-                </p>
-                <p className="truncate text-xs text-sidebar-foreground/60">
-                  john@example.com
-                </p>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </aside>
