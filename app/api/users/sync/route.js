@@ -1,7 +1,7 @@
 
 import { Webhook } from "svix";
 import { headers } from "next/headers";
-import { db } from "@/lib/prisma";
+import db from "@/lib/prisma";
 
 export async function POST(req) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
