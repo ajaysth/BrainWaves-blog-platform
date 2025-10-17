@@ -4,8 +4,33 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { PostTable } from "@/components/dashboard/PostTable";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import db from "@/lib/prisma";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { userId } = auth();
+
+  // if (!userId) {
+  //   return <div>Not authenticated</div>; // Or redirect to sign-in
+  // }
+
+  const recentPosts =
+    (await db.post.findMany({
+      where: {
+        author: {
+          clerkUserId: userId,
+        },
+      },
+      include: {
+        category: true,
+        tags: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 5, // Display a limited number of recent posts
+    })) || [];
+
   return (
     <div>
       <DashboardNavbar title="Overview" />
@@ -60,26 +85,28 @@ export default function DashboardPage() {
               View all →
             </a>
           </div>
-          <PostTable />
+          <PostTable posts={recentPosts} />
         </Card>
 
         {/* Quick Actions */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer group">
-            <div className="flex items-start gap-4">
-              <div className="rounded-lg bg-gradient-to-br from-primary to-accent p-3 shadow-md group-hover:scale-110 transition-transform">
-                <FileText className="h-6 w-6 text-white" />
+          <Link href="/dashboard/posts/new" className="block">
+            <Card className="p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-primary/20 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer group">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-gradient-to-br from-primary to-accent p-3 shadow-md group-hover:scale-110 transition-transform">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">
+                    Create New Post
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Start writing your next blog post
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground">
-                  Create New Post
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Start writing your next blog post
-                </p>
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </Link>
 
           <Link href="/dashboard/analytics" className="block">
             <Card className="p-6 bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-2 border-green-500/20 hover:border-green-500/50 hover:shadow-lg transition-all duration-300 cursor-pointer group">

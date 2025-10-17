@@ -16,38 +16,35 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
-const posts = [
-  {
-    id: 1,
-    title: "Getting Started with Next.js 14",
-    status: "published",
-    views: 1234,
-    likes: 89,
-    comments: 23,
-    date: "2024-01-15",
-  },
-  {
-    id: 2,
-    title: "Advanced React Patterns",
-    status: "draft",
-    views: 0,
-    likes: 0,
-    comments: 0,
-    date: "2024-01-14",
-  },
-  {
-    id: 3,
-    title: "Building Scalable APIs",
-    status: "published",
-    views: 2341,
-    likes: 156,
-    comments: 45,
-    date: "2024-01-12",
-  },
-];
+export function PostTable({ posts }) {
+  const router = useRouter();
 
-export function PostTable() {
+  const handleDeletePost = async (postId) => {
+    if (!confirm("Are you sure you want to delete this post?")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.details || "Failed to delete post");
+      }
+
+      toast.success("Post deleted successfully!");
+      router.refresh(); // Refresh the page to update the post list
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-border bg-card">
       <div className="overflow-x-auto">
@@ -78,15 +75,17 @@ export function PostTable() {
                 className="border-b border-border last:border-0 hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 transition-all"
               >
                 <td className="px-6 py-4">
-                  <p className="font-medium text-foreground">{post.title}</p>
+                  <Link href={`/blog/${post.slug}`} className="font-medium text-foreground hover:underline">
+                    {post.title}
+                  </Link>
                 </td>
                 <td className="px-6 py-4">
                   <Badge
                     variant={
-                      post.status === "published" ? "default" : "secondary"
+                      post.status === "PUBLISHED" ? "default" : "secondary"
                     }
                     className={
-                      post.status === "published"
+                      post.status === "PUBLISHED"
                         ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 border border-green-500/30 hover:from-green-500/30 hover:to-emerald-500/30"
                         : "bg-gradient-to-r from-gray-500/20 to-slate-500/20 text-gray-700 border border-gray-500/30"
                     }
@@ -106,12 +105,13 @@ export function PostTable() {
                     </span>
                     <span className="flex items-center gap-1 hover:text-purple-600 transition-colors">
                       <MessageSquare className="h-4 w-4 text-purple-600" />
-                      {post.comments}
+                      {/* Assuming comments are not directly on Post model, or need to be fetched */}
+                      {0} 
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">
-                  {new Date(post.date).toLocaleDateString()}
+                  {new Date(post.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <DropdownMenu>
@@ -121,11 +121,16 @@ export function PostTable() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/posts/edit/${post.id}`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleDeletePost(post.id)}
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </DropdownMenuItem>

@@ -3,8 +3,31 @@ import { PostTable } from "@/components/dashboard/PostTable";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
+import db from "@/lib/prisma";
 
-export default function PostsPage() {
+export default async function PostsPage() {
+  const { userId } = auth();
+
+  // if (!userId) {
+  //   return <div>Not authenticated</div>; // Or redirect to sign-in
+  // }
+
+  const posts = (await db.post.findMany({
+    where: {
+      author: {
+        clerkUserId: userId,
+      },
+    },
+    include: {
+      category: true,
+      tags: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  })) || [];
+
   return (
     <div>
       <DashboardNavbar title="My Posts" />
@@ -25,7 +48,7 @@ export default function PostsPage() {
           </Link>
         </div>
 
-        <PostTable />
+        <PostTable posts={posts} />
       </div>
     </div>
   );

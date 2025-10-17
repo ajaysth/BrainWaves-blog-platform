@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -15,38 +14,58 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Save, Eye, ImageIcon, X, Loader2, Star } from 'lucide-react';
 import { toast } from 'react-toastify';
+import React from 'react';
 
-export default function NewPostPage() {
+export default function EditPostPage({ params }) {
+  const { id } = React.use(params);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [images, setImages] = useState([]);
-  const [featuredImage, setFeaturedImage] = useState(''); // New state for featured image
+  const [featuredImage, setFeaturedImage] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState('');
   const [status, setStatus] = useState('DRAFT');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Set to true initially for loading existing post
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch('/api/categories');
-        if (!res.ok) throw new Error('Failed to fetch categories');
-        const data = await res.json();
-        setCategories(data);
+        // Fetch categories
+        const categoriesRes = await fetch('/api/categories');
+        if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
+        const categoriesData = await categoriesRes.json();
+        setCategories(categoriesData);
+
+        // Fetch post data
+        const postRes = await fetch(`/api/posts/${id}`);
+        if (!postRes.ok) throw new Error('Failed to fetch post');
+        const postData = await postRes.json();
+
+        setTitle(postData.title);
+        setContent(postData.content);
+        setExcerpt(postData.excerpt || '');
+        setImages(postData.images.map(img => ({ ...img, id: img.id || Date.now() + Math.random() }))); // Ensure images have client-side IDs
+        setFeaturedImage(postData.featuredImage || '');
+        setCategoryId(postData.categoryId);
+        setTags(postData.tags.map(tag => tag.name).join(', '));
+        setStatus(postData.status);
       } catch (error) {
         setError(error.message);
         toast.error(error.message);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchCategories();
-  }, []);
+    fetchData();
+  }, [id]);
 
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
@@ -72,7 +91,7 @@ export default function NewPostPage() {
             id: Date.now() + Math.random(),
             url: data.url,
             name: file.name,
-            isFeatured: false, // New field
+            isFeatured: false,
           });
         } catch (error) {
           toast.error(error.message);
@@ -83,31 +102,28 @@ export default function NewPostPage() {
     setImages((prev) => [...prev, ...uploadedImages]);
   };
 
-  const removeImage = (id) => {
+  const removeImage = (imageId) => {
     setImages((prev) => {
-      const updatedImages = prev.filter((img) => img.id !== id);
-      // If the removed image was the featured image, clear featuredImage state
-      if (featuredImage === prev.find(img => img.id === id)?.url) {
+      const updatedImages = prev.filter((img) => img.id !== imageId);
+      if (featuredImage === prev.find(img => img.id === imageId)?.url) {
         setFeaturedImage('');
       }
       return updatedImages;
     });
   };
 
-  const toggleFeatured = (id) => {
+  const toggleFeatured = (imageId) => {
     setImages((prev) =>
       prev.map((img) => {
-        if (img.id === id) {
-          // Toggle isFeatured for the clicked image
+        if (img.id === imageId) {
           const newIsFeatured = !img.isFeatured;
           if (newIsFeatured) {
-            setFeaturedImage(img.url); // Set this image as the featured image
+            setFeaturedImage(img.url);
           } else if (featuredImage === img.url) {
-            setFeaturedImage(''); // Unset if it was the featured image
+            setFeaturedImage('');
           }
           return { ...img, isFeatured: newIsFeatured };
         } else {
-          // Ensure only one image can be featured at a time
           return { ...img, isFeatured: false };
         }
       })
@@ -115,7 +131,9 @@ export default function NewPostPage() {
   };
 
   const insertImageToContent = (imageUrl, imageName) => {
-    const imageMarkdown = `\n![${imageName}](${imageUrl})\n`;
+    const imageMarkdown = `
+![${imageName}](${imageUrl})
+`;
     setContent((prev) => prev + imageMarkdown);
   };
 
@@ -125,8 +143,8 @@ export default function NewPostPage() {
     setStatus(postStatus);
 
     try {
-      const res = await fetch('/api/posts', {
-        method: 'POST',
+      const res = await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
@@ -136,13 +154,13 @@ export default function NewPostPage() {
           status: postStatus,
           images: images.map(img => ({ url: img.url, isFeatured: img.isFeatured })),
           tags: tags.split(',').map(tag => tag.trim()),
-          featuredImage, // Include featuredImage in the payload
+          featuredImage,
         }),
       });
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to create post');
+        throw new Error(errorData.error || 'Failed to update post');
       }
 
       toast.success(`Post ${postStatus.toLowerCase()}ed successfully!`);
@@ -155,9 +173,27 @@ export default function NewPostPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div>
+        <DashboardNavbar title="Edit Post" />
+        <div className="p-6 text-center">Loading post...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <DashboardNavbar title="Edit Post" />
+        <div className="p-6 text-center text-destructive">Error: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <DashboardNavbar title="Create New Post" />
+      <DashboardNavbar title="Edit Post" />
 
       <div className="p-6">
         <Card className="p-6 bg-card border-border max-w-4xl mx-auto">
@@ -178,7 +214,7 @@ export default function NewPostPage() {
               <Label htmlFor="category">Category</Label>
               <Select
                 onValueChange={setCategoryId}
-                defaultValue={categoryId}
+                value={categoryId}
                 disabled={loading}
               >
                 <SelectTrigger>

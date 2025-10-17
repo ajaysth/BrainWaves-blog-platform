@@ -199,26 +199,20 @@ export default function BlogPostDetail({ post }) {
               </div>
             </div>
 
-            {/* Featured Image */}
-            {post.featuredImage && (
-              <div className="mb-12 flex justify-center">
-                <img
-                  src={post.featuredImage}
-                  alt={post.title}
-                  className="max-w-2xl h-auto rounded-xl object-cover"
-                />
+            {/* Images Grid */}
+            {post.images?.length > 0 && (
+              <div className="mb-12 grid grid-cols-2 md:grid-cols-3 gap-4">
+                {post.images.map((image, index) => (
+                  <a key={index} href={image.url} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={image.url || "/placeholder.svg"}
+                      alt={post.title}
+                      className="w-full h-32 object-cover rounded-xl"
+                    />
+                  </a>
+                ))}
               </div>
             )}
-            <div className="mb-12 space-y-4">
-              {post.images?.map((image, index) => (
-                <img
-                  key={index}
-                  src={image.url || "/placeholder.svg"}
-                  alt={post.title}
-                  className="w-full h-auto rounded-xl"
-                />
-              ))}
-            </div>
 
             {/* Article Content */}
             <article className="prose prose-lg" dangerouslySetInnerHTML={{ __html: post.content }} />
@@ -306,9 +300,9 @@ export default function BlogPostDetail({ post }) {
                       className="hover:bg-accent transition-colors cursor-pointer"
                     >
                       <CardContent className="p-4">
-                        {relatedPost.images && relatedPost.images.length > 0 && (
+                        {relatedPost.featuredImage && (
                           <img
-                            src={relatedPost.images[0].url || "/placeholder.svg"}
+                            src={relatedPost.featuredImage || "/placeholder.svg"}
                             alt={relatedPost.title}
                             className="w-full h-32 object-cover rounded-md mb-3"
                           />

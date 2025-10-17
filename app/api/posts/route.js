@@ -15,7 +15,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { title, content, categoryId, status, excerpt, images, tags } =
+  const { title, content, categoryId, status, excerpt, images, tags, featuredImage } =
     await request.json();
 
   if (!title || !content || !categoryId) {
@@ -36,14 +36,15 @@ export async function POST(request) {
         authorId: user.id,
         categoryId,
         status: status || "DRAFT",
+        featuredImage: featuredImage || "/cardimg/1.jpg", // Handle featuredImage
         images: {
-          create: images.map((image) => ({
+          create: (images || []).map((image) => ({
             url: image.url,
             isFeatured: image.isFeatured || false,
           }))
         },
         tags: {
-          connectOrCreate: tags.map((tag) => ({
+          connectOrCreate: (tags || []).map((tag) => ({
             where: { name: tag },
             create: { name: tag, slug: createSlug(tag) },
           }))
@@ -54,7 +55,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating post:", error);
     return NextResponse.json(
-      { error: "Failed to create post" },
+      { error: "Failed to create post", details: error.message },
       { status: 500 }
     );
   }
